@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // Автономная сборка для Docker-образа (см. Dockerfile); на Vercel не нужна
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   // Индикатор разработки перекрывает нижнюю навигацию на телефоне
   devIndicators: false,
   // sharp и встроенный PostgreSQL — нативные пакеты, в бандл их включать нельзя
