@@ -6,7 +6,12 @@ import { Chip, Switch } from "@/components/ui/misc";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { api, errorMessage } from "@/lib/client/api";
-import { setSessionFilters, useSessionFilters, type SessionFilters } from "@/lib/client/filters-store";
+import {
+  bumpSearchVersion,
+  setSessionFilters,
+  useSessionFilters,
+  type SessionFilters,
+} from "@/lib/client/filters-store";
 import { useMe } from "@/lib/client/hooks";
 import { GOAL_EMOJI, GOAL_LABEL, GOALS, LIMITS, LOOKING_FOR, LOOKING_FOR_LABEL, type LookingFor } from "@/lib/shared/constants";
 import { INTERESTS } from "@/lib/shared/interests";
@@ -98,6 +103,7 @@ function FiltersForm({ onClose }: { onClose: () => void }) {
           },
         });
         await mutate(updated, { revalidate: false });
+        bumpSearchVersion();
       }
       setSessionFilters({ goal: draft.goal, interests: draft.interests, online: draft.online });
       onClose();

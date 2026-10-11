@@ -9,8 +9,14 @@ import { NotificationsLink, Screen } from "@/components/screen";
 import { Button, IconButton } from "@/components/ui/button";
 import { EmptyState, ErrorState, Photo, Skeleton } from "@/components/ui/misc";
 import { errorMessage, fetcher } from "@/lib/client/api";
-import { countActive, filtersQuery, setSessionFilters, useSessionFilters } from "@/lib/client/filters-store";
-import { useDebounced, useMe } from "@/lib/client/hooks";
+import {
+  countActive,
+  filtersQuery,
+  setSessionFilters,
+  useSearchVersion,
+  useSessionFilters,
+} from "@/lib/client/filters-store";
+import { useDebounced } from "@/lib/client/hooks";
 import { formatDistance } from "@/lib/shared/geo";
 import type { ProfileCard } from "@/lib/shared/types";
 
@@ -18,20 +24,18 @@ type Page = { cards: ProfileCard[]; nextCursor: number | null };
 
 /** «Рядом»: сетка анкет по возрастанию расстояния с поиском, фильтрами и подгрузкой. */
 export function NearbyScreen() {
-  const { data: me } = useMe();
   const filters = useSessionFilters();
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const q = useDebounced(query.trim());
-  const profile = me?.profile;
+  const searchVersion = useSearchVersion();
 
   const { data, error, isLoading, isValidating, size, setSize, mutate } = useSWRInfinite<Page>(
     (index, previous) => {
-      if (!profile) return null;
       if (previous && previous.nextCursor === null) return null;
       const search = filtersQuery(filters, { q, cursor: index === 0 ? undefined : (previous?.nextCursor ?? undefined) });
-      // Сохранённые настройки поиска — часть ключа, чтобы список обновился после их смены
-      return `/api/nearby${search}#${profile.lookingFor}:${profile.ageMin}:${profile.ageMax}:${profile.maxDistanceKm}`;
+      // Версия настроек поиска — часть ключа: после их сохранения список загрузится заново
+      return `/api/nearby${search}#${searchVersion}`;
     },
     (key: string) => fetcher<Page>(key.split("#")[0]),
     { revalidateFirstPage: false, revalidateOnFocus: false },
@@ -83,7 +87,7 @@ export function NearbyScreen() {
         )}
       </div>
 
-      {isLoading || !me ? (
+      {isLoading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className="aspect-[3/4]" />

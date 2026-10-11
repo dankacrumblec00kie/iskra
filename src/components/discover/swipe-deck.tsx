@@ -15,7 +15,13 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/ui/misc";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiRequestError, errorMessage, fetcher } from "@/lib/client/api";
-import { countActive, filtersQuery, setSessionFilters, useSessionFilters } from "@/lib/client/filters-store";
+import {
+  countActive,
+  filtersQuery,
+  setSessionFilters,
+  useSearchVersion,
+  useSessionFilters,
+} from "@/lib/client/filters-store";
 import { KEYS, useMe } from "@/lib/client/hooks";
 import { LIMITS } from "@/lib/shared/constants";
 import type { Me, ProfileCard, SwipeAction, SwipeResult } from "@/lib/shared/types";
@@ -30,14 +36,12 @@ export function SwipeDeck() {
   const { mutate: mutateGlobal } = useSWRConfig();
   const { data: me, mutate: mutateMe } = useMe();
   const filters = useSessionFilters();
-  const profile = me?.profile;
+  const searchVersion = useSearchVersion();
 
-  // Ключ включает сохранённые настройки поиска: изменились — лента загружается заново
-  const key = profile
-    ? `/api/discover${filtersQuery(filters)}#${profile.lookingFor}:${profile.ageMin}:${profile.ageMax}:${profile.maxDistanceKm}`
-    : null;
+  // Лента запрашивается сразу, параллельно с /api/me: сервер сам знает сохранённые настройки
+  // поиска. Версия в ключе меняется после их сохранения — тогда лента загружается заново.
   const { data, error, isLoading, isValidating, mutate } = useSWR<{ cards: ProfileCard[] }>(
-    key,
+    `/api/discover${filtersQuery(filters)}#${searchVersion}`,
     (k: string) => fetcher(k.split("#")[0]),
     { revalidateOnFocus: false, revalidateIfStale: false },
   );
@@ -100,10 +104,10 @@ export function SwipeDeck() {
 
   const act = useCallback(
     (action: SwipeAction) => {
-      if (!me || !topCard.current) return;
+      if (!topCard.current) return;
       // Лимиты известны заранее: не анимируем свайп, который сервер всё равно отклонит
-      if (action !== "pass" && me.limits.likesLeft === 0) return setPaywall("likes");
-      if (action === "superlike" && me.limits.superlikesLeft === 0) return setPaywall("superlikes");
+      if (action !== "pass" && me?.limits.likesLeft === 0) return setPaywall("likes");
+      if (action === "superlike" && me?.limits.superlikesLeft === 0) return setPaywall("superlikes");
       topCard.current.fling(action);
     },
     [me],
@@ -147,7 +151,7 @@ export function SwipeDeck() {
   }, [overlayOpen, act]);
 
   const activeFilters = countActive(filters);
-  const loading = isLoading || !me;
+  const loading = isLoading;
   const refilling = cards.length === 0 && (isValidating || inflight > 0) && mayHaveMore;
 
   return (

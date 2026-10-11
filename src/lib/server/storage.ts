@@ -38,7 +38,13 @@ const localStorage: Storage = {
 const blobStorage: Storage = {
   async put(key, data, contentType) {
     const { put } = await import("@vercel/blob");
-    const blob = await put(key, data, { access: "public", contentType, addRandomSuffix: false });
+    // Ключи уже уникальны (UUID); перезапись нужна только сиду, который пересоздаёт демо-фото
+    const blob = await put(key, data, {
+      access: "public",
+      contentType,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
     return { url: blob.url };
   },
   async remove(key) {

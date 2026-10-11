@@ -8,6 +8,7 @@ import { Field, Input, Segmented, Textarea } from "@/components/ui/field";
 import { ScreenLoader } from "@/components/ui/misc";
 import { useToast } from "@/components/ui/toast";
 import { api, ApiRequestError, errorMessage } from "@/lib/client/api";
+import { bumpSearchVersion } from "@/lib/client/filters-store";
 import { useMe } from "@/lib/client/hooks";
 import {
   GENDER_LABEL,
@@ -87,6 +88,7 @@ function EditForm({
     setSaving(true);
     try {
       onSaved(await api<Me>("/api/me", { method: "PATCH", body: parsed.data }));
+      bumpSearchVersion(); // пол, город и «кого показывать» влияют на ленту и «Рядом»
       toast("Анкета сохранена", "success");
       router.push("/profile");
     } catch (error) {

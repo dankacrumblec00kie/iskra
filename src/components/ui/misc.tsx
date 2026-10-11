@@ -70,11 +70,14 @@ export function Photo({
   alt,
   className,
   eager,
+  priority,
 }: {
   photo: PhotoDto | null | undefined;
   alt: string;
   className?: string;
   eager?: boolean;
+  /** Главное изображение экрана: браузер загрузит его раньше остальных */
+  priority?: boolean;
 }) {
   if (!photo) {
     return (
@@ -91,7 +94,8 @@ export function Photo({
       alt={alt}
       width={photo.width}
       height={photo.height}
-      loading={eager ? "eager" : "lazy"}
+      loading={eager || priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : undefined}
       decoding="async"
       draggable={false}
       className={clsx("bg-cover bg-center object-cover", className)}

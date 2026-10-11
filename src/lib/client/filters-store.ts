@@ -32,7 +32,27 @@ export function useSessionFilters() {
   );
 }
 
-export const countActive = (f: SessionFilters) => (f.goal ? 1 : 0) + (f.online ? 1 : 0) + f.interests.length;
+/**
+ * Версия постоянных настроек поиска (пол, возраст, расстояние, город). Входит в ключи SWR
+ * ленты и «Рядом»: после сохранения настроек версия растёт, и списки загружаются заново.
+ * Благодаря этому списки не ждут ответа /api/me и запрашиваются параллельно с ним.
+ */
+let searchVersion = 0;
+
+export function bumpSearchVersion() {
+  searchVersion += 1;
+  listeners.forEach((listener) => listener());
+}
+
+export function useSearchVersion() {
+  return useSyncExternalStore(
+    subscribe,
+    () => searchVersion,
+    () => 0,
+  );
+}
+
+export const countActive =(f: SessionFilters) => (f.goal ? 1 : 0) + (f.online ? 1 : 0) + f.interests.length;
 
 /** Query-строка для /api/discover и /api/nearby. */
 export function filtersQuery(f: SessionFilters, extra: Record<string, string | number | undefined> = {}) {

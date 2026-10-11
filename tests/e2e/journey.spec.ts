@@ -106,6 +106,23 @@ test("новый пользователь проходит путь от рег�
     await expect(page.getByRole("button", { name: /Лайкнуть в ответ/ }).first()).toBeVisible();
   });
 
+  await test.step("фильтры: настройки поиска сохраняются, лента перестраивается", async () => {
+    await page.goto("/discover");
+    await page.getByRole("button", { name: "Фильтры" }).click();
+    const filters = page.getByRole("dialog", { name: "Фильтры" });
+    await filters.getByRole("button", { name: "Мужчин", exact: true }).click();
+    await filters.getByRole("button", { name: /Серьёзные отношения/ }).click();
+    await filters.getByRole("button", { name: "Показать анкеты" }).click();
+    await expect(filters).toBeHidden();
+
+    // Значок на кнопке показывает число активных фильтров
+    await expect(page.getByRole("button", { name: "Фильтры" })).toContainText("1");
+
+    // «Показывать мне» — постоянная настройка: она дошла до профиля
+    await page.goto("/profile");
+    await expect(page.getByText("Мужчин", { exact: true })).toBeVisible();
+  });
+
   await test.step("выход и повторный вход", async () => {
     await page.goto("/settings");
     await page.getByRole("button", { name: "Выйти" }).click();

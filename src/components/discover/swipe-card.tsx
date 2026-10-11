@@ -99,6 +99,7 @@ export function SwipeCard({
         alt={`${card.name}, ${card.age}`}
         className="pointer-events-none size-full"
         eager={depth < 2}
+        priority={active}
       />
 
       {card.photos.length > 1 && (
