@@ -16,6 +16,8 @@ export const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
 /** Превращает ключ в путь внутри UPLOADS_DIR; ключи с выходом из папки отклоняет. */
 export function resolveUploadPath(key: string) {
+  // На Linux обратный слэш — обычный символ имени, поэтому такие ключи отклоняем явно
+  if (key.includes("\\") || key.includes("\0")) return null;
   const full = path.resolve(UPLOADS_DIR, key);
   if (!full.startsWith(UPLOADS_DIR + path.sep)) return null;
   return full;
