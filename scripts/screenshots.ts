@@ -14,16 +14,22 @@ const VIEWPORTS = {
   desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
 } as const;
 
-type Shot = { name: string; path: string; auth: boolean; prepare?: (page: Page) => Promise<void> };
+type Account = "guest" | "demo" | "admin";
+type Shot = { name: string; path: string; as: Account; prepare?: (page: Page) => Promise<void> };
+
+const CREDENTIALS = {
+  demo: { email: "demo@iskra.app", password: "demo1234" },
+  admin: { email: "admin@iskra.app", password: "admin1234" },
+} as const;
 
 const SHOTS: Shot[] = [
-  { name: "landing", path: "/", auth: false },
-  { name: "login", path: "/login", auth: false },
-  { name: "discover", path: "/discover", auth: true },
+  { name: "landing", path: "/", as: "guest" },
+  { name: "login", path: "/login", as: "guest" },
+  { name: "discover", path: "/discover", as: "demo" },
   {
     name: "profile-sheet",
     path: "/discover",
-    auth: true,
+    as: "demo",
     prepare: async (page) => {
       await page.getByRole("button", { name: /Открыть анкету/ }).first().click();
       await page.waitForTimeout(500);
@@ -32,19 +38,19 @@ const SHOTS: Shot[] = [
   {
     name: "filters",
     path: "/discover",
-    auth: true,
+    as: "demo",
     prepare: async (page) => {
       await page.getByRole("button", { name: "Фильтры" }).click();
       await page.waitForTimeout(400);
     },
   },
-  { name: "nearby", path: "/nearby", auth: true },
-  { name: "likes", path: "/likes", auth: true },
-  { name: "matches", path: "/matches", auth: true },
+  { name: "nearby", path: "/nearby", as: "demo" },
+  { name: "likes", path: "/likes", as: "demo" },
+  { name: "matches", path: "/matches", as: "demo" },
   {
     name: "chat",
     path: "/matches",
-    auth: true,
+    as: "demo",
     prepare: async (page) => {
       await page.getByRole("link", { name: /Мария/ }).first().click();
       await page.waitForURL(/\/chat\//);
@@ -52,11 +58,33 @@ const SHOTS: Shot[] = [
       await page.waitForTimeout(400);
     },
   },
-  { name: "profile", path: "/profile", auth: true },
-  { name: "profile-edit", path: "/profile/edit", auth: true },
-  { name: "premium", path: "/premium", auth: true },
-  { name: "settings", path: "/settings", auth: true },
-  { name: "notifications", path: "/notifications", auth: true },
+  { name: "profile", path: "/profile", as: "demo" },
+  { name: "profile-edit", path: "/profile/edit", as: "demo" },
+  { name: "premium", path: "/premium", as: "demo" },
+  { name: "settings", path: "/settings", as: "demo" },
+  { name: "notifications", path: "/notifications", as: "demo" },
+  {
+    name: "checkout",
+    path: "/premium",
+    as: "demo",
+    prepare: async (page) => {
+      await page.getByRole("button", { name: /Оформить за/ }).click();
+      await page.waitForURL(/\/premium\/checkout\//);
+      await page.getByRole("button", { name: /^Оплатить/ }).waitFor();
+    },
+  },
+  // Последним: лайк создаёт пару и меняет данные демо-аккаунта
+  {
+    name: "match",
+    path: "/discover",
+    as: "demo",
+    prepare: async (page) => {
+      await page.getByRole("button", { name: "Нравится", exact: true }).click();
+      await page.getByRole("dialog", { name: "Взаимная симпатия" }).waitFor();
+      await page.waitForTimeout(700);
+    },
+  },
+  { name: "admin", path: "/admin", as: "admin" },
 ];
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -64,17 +92,19 @@ const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL ?? 
 const problems: string[] = [];
 
 for (const [device, viewport] of Object.entries(VIEWPORTS)) {
-  for (const auth of [false, true]) {
+  for (const account of ["guest", "demo", "admin"] as const) {
     const context = await browser.newContext({ ...viewport, locale: "ru-RU", reducedMotion: "reduce" });
-    if (auth) {
+    if (account !== "guest") {
       const response = await context.request.post(`${BASE}/api/auth/login`, {
-        data: { email: "demo@iskra.app", password: "demo1234" },
+        data: CREDENTIALS[account],
         headers: { origin: BASE },
       });
-      if (!response.ok()) throw new Error(`Не удалось войти в демо-аккаунт: ${response.status()}`);
+      if (!response.ok()) {
+        throw new Error(`Не удалось войти (${account}): ${response.status()}. Выполните npm run db:seed`);
+      }
     }
 
-    for (const shot of SHOTS.filter((s) => s.auth === auth && (!ONLY || ONLY.includes(s.name)))) {
+    for (const shot of SHOTS.filter((s) => s.as === account && (!ONLY || ONLY.includes(s.name)))) {
       const page = await context.newPage();
       page.on("console", (message) => {
         if (message.type() === "error") problems.push(`[${device}/${shot.name}] console: ${message.text()}`);

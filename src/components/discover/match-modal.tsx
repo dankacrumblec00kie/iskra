@@ -7,12 +7,12 @@ import { Photo } from "@/components/ui/misc";
 import type { PhotoDto, SwipeResult } from "@/lib/shared/types";
 
 const SPARKS = [
-  { left: "12%", top: "18%", delay: "0s", size: "2.2rem" },
-  { left: "82%", top: "14%", delay: "0.15s", size: "1.6rem" },
-  { left: "70%", top: "64%", delay: "0.3s", size: "2rem" },
-  { left: "18%", top: "70%", delay: "0.2s", size: "1.4rem" },
-  { left: "48%", top: "8%", delay: "0.35s", size: "1.2rem" },
-  { left: "90%", top: "42%", delay: "0.1s", size: "1.3rem" },
+  // Только в верхней половине экрана, чтобы не перекрывать текст и кнопки
+  { left: "12%", top: "20%", delay: "0s", size: "2.2rem" },
+  { left: "82%", top: "15%", delay: "0.15s", size: "1.6rem" },
+  { left: "48%", top: "9%", delay: "0.35s", size: "1.2rem" },
+  { left: "90%", top: "40%", delay: "0.1s", size: "1.3rem" },
+  { left: "6%", top: "38%", delay: "0.25s", size: "1.1rem" },
 ];
 
 /** Полноэкранное «Это взаимно!» после совпадения симпатий. */
