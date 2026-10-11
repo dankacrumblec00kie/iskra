@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { connection, NextResponse } from "next/server";
 import {
   createAuthorizationRequest,
   GOOGLE_STATE_COOKIE,
@@ -11,6 +11,7 @@ import { api } from "@/lib/server/http";
 
 // Шаг 1 OAuth2: отправляем пользователя на страницу согласия Google.
 export const GET = api(async (req) => {
+  await connection(); // ответ зависит от запроса и окружения — не пререндерим при сборке
   if (!googleEnabled) throw notFound("Вход через Google не настроен");
 
   const { url, state, verifier } = createAuthorizationRequest(req.nextUrl.origin);

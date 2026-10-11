@@ -2,17 +2,13 @@ import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { matches, profiles, swipes, users } from "@/db/schema";
 import { LIMITS } from "@/lib/shared/constants";
+import { orderedPair } from "@/lib/shared/pairs";
 import type { ProfileCard, SwipeAction, SwipeLimits, SwipeResult } from "@/lib/shared/types";
 import type { SessionUser } from "../auth/session";
 import { badRequest, conflict, notFound, paymentRequired } from "../errors";
-import { getViewer, isListedSql, loadCards, loadPhotos, notBlockedSql } from "./cards";
+import { genderMatchSql, getViewer, isListedSql, loadCards, loadPhotos, notBlockedSql } from "./cards";
 import { demoLikesBack } from "./demo";
 import { notify } from "./notifications";
-
-/** Пара id в каноническом порядке (a < b) — так мэтч хранится в таблице. */
-export function orderedPair(x: string, y: string): [string, string] {
-  return x < y ? [x, y] : [y, x];
-}
 
 /** Сколько лайков и суперлайков осталось за последние 24 часа. */
 export async function getSwipeLimits(user: Pick<SessionUser, "id" | "isPremium">): Promise<SwipeLimits> {
@@ -48,11 +44,17 @@ export async function swipe(
 ): Promise<SwipeResult> {
   if (toUserId === user.id) throw badRequest("Нельзя оценить собственную анкету");
 
+  // Те же условия, что и в ленте: анкета открыта, блокировок нет и настройки «кого показывать»
+  // совпадают с обеих сторон. Иначе запросом в обход интерфейса можно было бы лайкнуть
+  // человека, который не хочет видеть анкеты такого пола, и попасть к нему в «Лайки».
+  const viewer = await getViewer(user.id);
   const [target] = await db
     .select({ id: profiles.userId, name: profiles.name, isDemo: users.isDemo })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.userId))
-    .where(and(eq(profiles.userId, toUserId), isListedSql, notBlockedSql(user.id)))
+    .where(
+      and(eq(profiles.userId, toUserId), isListedSql, notBlockedSql(user.id), genderMatchSql(viewer)),
+    )
     .limit(1);
   if (!target) throw notFound("Анкета недоступна");
 

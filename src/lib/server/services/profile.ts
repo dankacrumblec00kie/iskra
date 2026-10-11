@@ -6,7 +6,7 @@ import type { Counters, Me } from "@/lib/shared/types";
 import type { OnboardingInput, ProfilePatchInput } from "@/lib/shared/validation";
 import type { SessionUser } from "../auth/session";
 import { badRequest, forbidden } from "../errors";
-import { loadPhotos, notBlockedSql } from "./cards";
+import { genderMatchSql, isListedSql, loadPhotos, notBlockedSql } from "./cards";
 import { countUnreadMessages } from "./matches";
 import { getSwipeLimits } from "./swipes";
 
@@ -137,17 +137,28 @@ export async function deleteAccount(userId: string) {
 
 /** Счётчики для бейджей в навигации. */
 export async function getCounters(userId: string): Promise<Counters> {
+  const [me] = await db
+    .select({ gender: profiles.gender, lookingFor: profiles.lookingFor })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
+  if (!me) return { unreadMessages: 0, newLikes: 0, unreadNotifications: 0 };
+
   const [unreadMessages, [likes], [notes]] = await Promise.all([
     countUnreadMessages(userId),
-    // Лайки, на которые я ещё не ответил
+    // Лайки, на которые я ещё не ответил. Условия те же, что в списке «Лайки»,
+    // иначе число на бейдже расходилось бы с тем, что видно на экране.
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(swipes)
       .innerJoin(profiles, eq(profiles.userId, swipes.fromUserId))
+      .innerJoin(users, eq(users.id, swipes.fromUserId))
       .where(
         and(
           eq(swipes.toUserId, userId),
           ne(swipes.action, "pass"),
+          isListedSql,
+          genderMatchSql(me),
           notBlockedSql(userId),
           sql`not exists (
             select 1 from ${swipes} mine

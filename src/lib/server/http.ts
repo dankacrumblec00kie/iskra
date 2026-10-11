@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type ZodType } from "zod";
 import { badRequest, forbidden, HttpError, notFound, validationError } from "./errors";
@@ -20,6 +21,9 @@ export function api<C = unknown>(handler: Handler<C>, options: { csrf?: boolean 
       if (result instanceof Response) return result;
       return NextResponse.json(result ?? { ok: true });
     } catch (error) {
+      // Служебные исключения Next.js (прерывание пререндера при сборке, redirect) — не наши
+      // ошибки: их нужно отдать фреймворку, а не превращать в ответ 500
+      unstable_rethrow(error);
       return toErrorResponse(error);
     }
   };

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { photos, profiles, swipes, users } from "@/db/schema";
 import type { LikesResponse } from "@/lib/shared/types";
 import type { SessionUser } from "../auth/session";
-import { getViewer, isListedSql, loadCards, notBlockedSql } from "./cards";
+import { genderMatchSql, getViewer, isListedSql, loadCards, notBlockedSql } from "./cards";
 
 /**
  * «Кому я нравлюсь»: входящие лайки, на которые я ещё не ответил.
@@ -24,6 +24,8 @@ export async function getIncomingLikes(user: SessionUser): Promise<LikesResponse
         ne(swipes.action, "pass"),
         isListedSql,
         notBlockedSql(user.id),
+        // Если я сменил настройки «кого показывать», старые лайки от неподходящих анкет скрываются
+        genderMatchSql(viewer),
         sql`not exists (
           select 1 from ${swipes} mine
           where mine.from_user_id = ${user.id} and mine.to_user_id = ${swipes.fromUserId}

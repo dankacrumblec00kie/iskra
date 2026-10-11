@@ -1,11 +1,11 @@
 import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { blocks, matches, profiles, reports, users } from "@/db/schema";
+import { orderedPair } from "@/lib/shared/pairs";
 import type { ProfileCard } from "@/lib/shared/types";
 import { badRequest, notFound } from "../errors";
 import { rateLimit } from "../rate-limit";
 import { getViewer, loadCards, loadPhotos, notBlockedSql } from "./cards";
-import { orderedPair } from "./swipes";
 
 /** Блокировка: пользователи перестают видеть друг друга, общий чат удаляется. */
 export async function blockUser(blockerId: string, blockedId: string) {

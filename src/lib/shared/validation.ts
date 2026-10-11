@@ -143,7 +143,8 @@ export const photoOrderSchema = z.object({
 const queryInt = (min: number, max: number) => z.coerce.number().int().min(min).max(max);
 const queryList = z
   .union([z.string(), z.array(z.string())])
-  .transform((v) => (Array.isArray(v) ? v : v.split(",")).filter(Boolean));
+  .transform((v) => (Array.isArray(v) ? v : v.split(",")).filter(Boolean))
+  .refine((list) => list.length <= 10, "Слишком много значений в фильтре");
 
 export const searchFiltersSchema = z.object({
   q: z.string().trim().max(60).optional(),
