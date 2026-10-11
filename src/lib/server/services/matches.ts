@@ -5,6 +5,7 @@ import type { ChatThread, MatchPreview, MessageDto } from "@/lib/shared/types";
 import { forbidden, notFound } from "../errors";
 import { rateLimit } from "../rate-limit";
 import { ageSql, loadPhotos, ONLINE_WINDOW } from "./cards";
+import { scheduleDemoReply } from "./demo";
 import { notify } from "./notifications";
 
 const PAGE_SIZE = 50;
@@ -168,11 +169,11 @@ export async function sendMessage(matchId: string, userId: string, body: string)
     .returning();
   await db.update(matches).set({ lastMessageAt: message.createdAt }).where(eq(matches.id, matchId));
 
-  const [sender] = await db
-    .select({ name: profiles.name })
-    .from(profiles)
-    .where(eq(profiles.userId, userId))
-    .limit(1);
+  const [[sender], [recipient]] = await Promise.all([
+    db.select({ name: profiles.name }).from(profiles).where(eq(profiles.userId, userId)).limit(1),
+    db.select({ isDemo: users.isDemo }).from(users).where(eq(users.id, match.otherId)).limit(1),
+  ]);
+  if (recipient?.isDemo) scheduleDemoReply(matchId, match.otherId);
 
   await notify({
     userId: match.otherId,

@@ -6,6 +6,7 @@ import type { ProfileCard, SwipeAction, SwipeLimits, SwipeResult } from "@/lib/s
 import type { SessionUser } from "../auth/session";
 import { badRequest, conflict, notFound, paymentRequired } from "../errors";
 import { getViewer, isListedSql, loadCards, loadPhotos, notBlockedSql } from "./cards";
+import { demoLikesBack } from "./demo";
 import { notify } from "./notifications";
 
 /** Пара id в каноническом порядке (a < b) — так мэтч хранится в таблице. */
@@ -48,7 +49,7 @@ export async function swipe(
   if (toUserId === user.id) throw badRequest("Нельзя оценить собственную анкету");
 
   const [target] = await db
-    .select({ id: profiles.userId, name: profiles.name })
+    .select({ id: profiles.userId, name: profiles.name, isDemo: users.isDemo })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.userId))
     .where(and(eq(profiles.userId, toUserId), isListedSql, notBlockedSql(user.id)))
@@ -88,6 +89,13 @@ export async function swipe(
       .limit(1);
 
     if (theirLike) {
+      match = await createMatch(user.id, target);
+    } else if (target.isDemo && demoLikesBack(user.id, target.id)) {
+      // Демо-режим: анкета из сида отвечает взаимностью
+      await db
+        .insert(swipes)
+        .values({ fromUserId: target.id, toUserId: user.id, action: "like" })
+        .onConflictDoNothing();
       match = await createMatch(user.id, target);
     } else {
       await notify({

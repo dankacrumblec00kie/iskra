@@ -4,6 +4,9 @@ import { GENDERS, GOALS, LIMITS, LOOKING_FOR, REPORT_REASONS } from "./constants
 import { ageFromBirthDate } from "./geo";
 import { INTEREST_BY_SLUG } from "./interests";
 
+// Сообщения по умолчанию («слишком маленькое число» и т. п.) — на русском
+z.config(z.locales.ru());
+
 const email = z
   .string("Введите e-mail")
   .trim()

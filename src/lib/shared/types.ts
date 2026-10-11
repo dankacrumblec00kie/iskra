@@ -30,6 +30,8 @@ export type ProfileCard = {
   sharedInterests: string[];
   online: boolean;
   isPremium: boolean;
+  /** Демонстрационная анкета из сида, а не настоящий пользователь */
+  isDemo: boolean;
   superLikedYou: boolean;
   myAction: SwipeAction | null;
   matchId: string | null;

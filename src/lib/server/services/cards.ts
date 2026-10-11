@@ -136,6 +136,7 @@ export async function loadCards(viewer: Viewer, ids: string[]): Promise<ProfileC
         heightCm: profiles.heightCm,
         online: sql<boolean>`${users.lastSeenAt} > now() - ${ONLINE_WINDOW}`,
         isPremium: sql<boolean>`coalesce(${users.premiumUntil} > now(), false)`,
+        isDemo: users.isDemo,
       })
       .from(profiles)
       .innerJoin(users, eq(users.id, profiles.userId))
@@ -203,6 +204,7 @@ export async function loadCards(viewer: Viewer, ids: string[]): Promise<ProfileC
       sharedInterests: interests.filter((slug) => mine.has(slug)),
       online: r.online,
       isPremium: r.isPremium,
+      isDemo: r.isDemo,
       superLikedYou: superliked.has(id),
       myAction: actionByUser.get(id) ?? null,
       matchId: matchByUser.get(id) ?? null,
