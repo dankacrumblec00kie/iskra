@@ -13,6 +13,7 @@ import {
   photos,
   profileInterests,
   profiles,
+  reports,
   swipes,
   users,
 } from "../src/db/schema";
@@ -337,6 +338,17 @@ async function main() {
       createdAt: new Date(start),
     });
   }
+
+  // Пара жалоб, чтобы очередь модератора не была пустой
+  await db.insert(reports).values([
+    {
+      reporterId: id("Ксения"),
+      reportedId: id("Паша"),
+      reason: "spam",
+      details: "В первом же сообщении прислал ссылку на сторонний сайт и попросил подписаться.",
+    },
+    { reporterId: id("Даша"), reportedId: id("Лёша"), reason: "abuse", details: "Грубит в переписке после отказа встретиться." },
+  ]);
 
   console.log(`[seed] готово: ${SEED_PROFILES.length} демо-анкет`);
   console.log(`[seed] вход: ${DEMO_EMAIL} / demo1234   администратор: ${ADMIN_EMAIL} / admin1234`);

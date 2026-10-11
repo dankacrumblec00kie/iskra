@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronRight, Crown, EyeOff, Pencil, Settings, Shield, Zap } from "lucide-react";
+import { Bell, ChevronRight, Crown, EyeOff, Pencil, Settings, Shield, ShieldCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { Screen } from "@/components/screen";
@@ -157,6 +157,11 @@ export function MyProfileScreen() {
         <RowLink href="/settings" icon={<Shield className="size-5" />}>
           Настройки и безопасность
         </RowLink>
+        {me.role === "admin" && (
+          <RowLink href="/admin" icon={<ShieldCheck className="size-5" />}>
+            Модерация
+          </RowLink>
+        )}
       </nav>
     </Screen>
   );

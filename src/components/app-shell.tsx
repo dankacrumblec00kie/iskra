@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Bell, Compass, Crown, Flame, Heart, MessageCircle, Settings, User } from "lucide-react";
+import { Bell, Compass, Crown, Flame, Heart, MessageCircle, Settings, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, type ReactNode } from "react";
@@ -38,6 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [error, me, router]);
 
   const isPremium = me?.isPremium ?? false;
+  const isAdmin = me?.role === "admin";
   // Сессии нет или анкета не заполнена: идёт редирект, содержимое прикрываем
   const leaving = error?.status === 401 || (me !== undefined && !me.onboarded);
   const failed = error !== undefined && error.status !== 401 && !me;
@@ -47,8 +48,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh">
       {/* usePathname на динамических маршрутах требует Suspense при пререндере */}
-      <Suspense fallback={<Navigation pathname={null} isPremium={isPremium} />}>
-        <NavigationWithPath isPremium={isPremium} />
+      <Suspense fallback={<Navigation pathname={null} isPremium={isPremium} isAdmin={isAdmin} />}>
+        <NavigationWithPath isPremium={isPremium} isAdmin={isAdmin} />
       </Suspense>
       <main className="flex min-w-0 flex-1 flex-col">{children}</main>
 
@@ -61,11 +62,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavigationWithPath({ isPremium }: { isPremium: boolean }) {
-  return <Navigation pathname={usePathname()} isPremium={isPremium} />;
+type NavigationProps = { isPremium: boolean; isAdmin: boolean };
+
+function NavigationWithPath(props: NavigationProps) {
+  return <Navigation pathname={usePathname()} {...props} />;
 }
 
-function Navigation({ pathname, isPremium }: { pathname: string | null; isPremium: boolean }) {
+function Navigation({ pathname, isPremium, isAdmin }: NavigationProps & { pathname: string | null }) {
   const { data: counters } = useCounters();
   // В открытом чате нижняя панель скрыта: место занимает поле ввода
   const inChat = pathname?.startsWith("/chat/") ?? false;
@@ -100,6 +103,11 @@ function Navigation({ pathname, isPremium }: { pathname: string | null; isPremiu
           <SideLink href="/settings" active={isActive(pathname, "/settings")} icon={<Settings className="size-5" />}>
             Настройки
           </SideLink>
+          {isAdmin && (
+            <SideLink href="/admin" active={isActive(pathname, "/admin")} icon={<ShieldCheck className="size-5" />}>
+              Модерация
+            </SideLink>
+          )}
         </nav>
 
         <Link

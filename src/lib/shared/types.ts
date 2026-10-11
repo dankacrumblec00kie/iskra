@@ -149,6 +149,28 @@ export type Product = {
   badge?: string;
 };
 
+export type AdminStats = {
+  users: number;
+  onboarded: number;
+  premium: number;
+  newThisWeek: number;
+  banned: number;
+  matches: number;
+  messages: number;
+  revenueMinor: number;
+  purchases: number;
+  openReports: number;
+};
+
+export type AdminReport = {
+  id: string;
+  reason: string;
+  details: string;
+  createdAt: string;
+  reporterName: string;
+  reported: { id: string; name: string; bio: string; photo: PhotoDto | null; totalReports: number };
+};
+
 export type ApiError = {
   error: { code: string; message: string; fields?: Record<string, string> };
 };
