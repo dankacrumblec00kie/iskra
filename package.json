@@ -8,14 +8,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:start": "tsx scripts/db-start.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test:e2e": "playwright test",
+    "db:reset": "tsx scripts/db-reset.ts",
+    "screenshots": "tsx scripts/screenshots.ts",
+    "push:keys": "tsx scripts/push-keys.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.1",
@@ -58,5 +62,6 @@
     "@embedded-postgres/windows-x64@18.4.0-beta.17": true,
     "unrs-resolver@1.12.2": true
   },
-  "type": "module"
+  "type": "module",
+  "description": "Искра — приложение для знакомств: свайпы, люди рядом, взаимные симпатии и чат"
 }
